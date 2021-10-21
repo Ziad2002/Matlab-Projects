@@ -1,0 +1,84 @@
+function [EscTime,EscVal, Image] = julia(c, limits,nx,ny,maxEscTime)
+% Julia function calculate the julia sets by calculating the escape time,
+% escape value and creates an image.
+
+% Inputs:
+%         c: is a scalar value that represtns the parameter. The value is
+%            essential because there is no default value for it.
+%         limits: This is a vector that specify a rectangular region in the
+%                 complex plane. It's form is [XMIN XMAX YMIN XMAX]. The XMIN and
+%                 XMAX represents the maximum and minimum values for the real
+%                 parts. The YMAX and YMIN represents the maximum and minmum values
+%                 for the imaginary part. The default value for this vector is [-R
+%                 R -R R], where R represents the scape redius for c.
+%         nx: It represents the number of points in the x-direction. It's
+%             default value is 1024
+%         ny: It represents the number of points in the y-direction. It's
+%             default value is 1024
+% Outputs:
+%         EscTime: An ny-by-nx array that contain the escape time for each
+%                  pixel.
+%         EscValue: An ny-by-nx array that contain the escape value for
+%                   each pixel.
+%         Image: An array containing the color data for image.
+
+% Assigning default values for the inputs if they are not defined.
+R = (1 + sqrt(1 + 4*abs(c)))/2;
+if ~exist ('limits', 'var') || isempty (limits)
+    limits= [-R R -R R];
+end
+if ~exist('nx', 'var') || isempty (nx)
+    nx=1024;
+end
+if ~exist ('ny', 'var') || isempty (ny)
+    ny=1024;
+end
+if ~exist ('maxEscTime', 'var') || isempty (maxEscTime)
+   maxEscTime=1000;
+end
+
+% Create an ny-by-nx array called Z that contains all of the z values in
+% the rectangular region
+x = linspace(limits(1),limits(2),nx);
+y = linspace(limits(4),limits(3),ny);
+[X,Y] = meshgrid(x,y);
+Z = X + 1i*Y;
+
+% Intializing EscTime and EscVal variables of size (ny, nx)
+EscTime= Inf(ny, nx);
+EscVal= NaN (ny, nx);
+
+% Create an (ny, nx) array of logical false value
+done= false(ny,nx);
+
+% Intializing the array variable
+K=1;
+
+%Create a while loop that will iterate as long as K is smaller than
+%maxEscTime and not all of the entries in the done array are true
+while(K < maxEscTime) && (~all(done(:)))  
+    %Replace current Z with its square plus the corresponding element of C
+    Z= Z.^2+c;
+    %Increase the sequence index variable K by 1
+    K=K+1;
+    %logical array called new of (ny,nx) size with elements true while 
+    %elements of abs(Z)> R and element of done is false
+    new= abs(Z)>R & done==0;
+    %assigning current value of k to EscTime and ssign the current 
+    %absolute values of of Z given by the true elements of new to the 
+    %corresponding elements of EscVal
+    EscTime(new==1)= K;
+    EscVal(new==1)= abs(Z(new==1));
+    %Updating the done array by setting each element to true if it was true or the
+    %corresponding element of new is true
+    if done(new==true) == false
+        done(new==true) = true;
+    end
+    if done == true(ny,nx)
+        break;
+    end
+    
+end
+% Plot result as a color image
+Image = showjulia(EscTime ,EscVal ,limits);
+end 
